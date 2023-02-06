@@ -1,0 +1,15 @@
+[package]
+name = "aoc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"]}
+regex = "1.7"
+itertools = "0.10.5"
+nom = "7.1.1"
+rayon = "1.6.1"
+petgraph = "0.6.2"
+derive_more = "0.99.17"
+lazy_static = "1.4.0"
+anyhow = "1.0.68"
