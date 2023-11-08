@@ -17,7 +17,6 @@ define_days!(@struct Day1, Day2, Day3, Day4, Day5, Day6, Day7, Day8, Day9, Day10
 define_days!(@mod day1, day2, day3, day4, day5, day6, day7, day8, day9, day10, day11, day12,
     day13, day14, day15, day16, day17, day18, day19, day20, day21, day22, day23, day24, day25);
 
-
 macro_rules! parse {
     ($s: ident as $t: ty) => {
         $s.parse::<$t>().expect("Parsing error")
@@ -48,7 +47,13 @@ pub(crate) use re;
 macro_rules! captures {
     ($s: expr, $re: expr) => {{
         use itertools::Itertools;
-        $re.captures($s).unwrap().iter().skip(1).map(|cap| cap.unwrap().as_str()).collect_tuple().unwrap()
+        $re.captures($s)
+            .unwrap()
+            .iter()
+            .skip(1)
+            .map(|cap| cap.unwrap().as_str())
+            .collect_tuple()
+            .unwrap()
     }};
 }
 pub(crate) use captures;

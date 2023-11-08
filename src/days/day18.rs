@@ -1,18 +1,14 @@
-use crate::{days::*, Point3d};
+use crate::days::*;
 use itertools::Itertools;
-use std::{
-    collections::{HashSet, VecDeque},
-    str::FromStr,
-};
+use pt::P3;
+use std::collections::{HashSet, VecDeque};
 
-type Pt = Point3d<i32>;
-
-fn get_neighbours(cubes: &HashSet<Pt>, cube: Pt) -> Vec<Pt> {
+fn get_neighbours(cubes: &HashSet<P3<i32>>, cube: P3<i32>) -> Vec<P3<i32>> {
     #[rustfmt::skip]
     let offsets = [
-        Pt{x:-1, y: 0, z: 0}, Pt{x: 1, y: 0, z: 0},
-        Pt{x: 0, y:-1, z: 0}, Pt{x: 0, y: 1, z: 0},
-        Pt{x: 0, y: 0, z:-1}, Pt{x: 0, y: 0, z: 1},
+        P3{x:-1, y: 0, z: 0}, P3{x: 1, y: 0, z: 0},
+        P3{x: 0, y:-1, z: 0}, P3{x: 0, y: 1, z: 0},
+        P3{x: 0, y: 0, z:-1}, P3{x: 0, y: 0, z: 1},
     ];
 
     offsets
@@ -22,8 +18,8 @@ fn get_neighbours(cubes: &HashSet<Pt>, cube: Pt) -> Vec<Pt> {
         .collect()
 }
 
-fn find_surface_area(cubes: &HashSet<Pt>) -> usize {
-    let mut queue: VecDeque<Pt> = cubes.iter().copied().collect();
+fn find_surface_area(cubes: &HashSet<P3<i32>>) -> usize {
+    let mut queue: VecDeque<P3<i32>> = cubes.iter().copied().collect();
     let mut visited = set![];
 
     let mut surface_area = 0;
@@ -44,7 +40,7 @@ fn find_surface_area(cubes: &HashSet<Pt>) -> usize {
     surface_area
 }
 
-fn find_bounds(cubes: &HashSet<Pt>) -> (i32, i32) {
+fn find_bounds(cubes: &HashSet<P3<i32>>) -> (i32, i32) {
     let vec = Vec::from_iter(cubes.iter());
     let mut bounds = (i32::MAX, i32::MIN);
 
@@ -55,18 +51,18 @@ fn find_bounds(cubes: &HashSet<Pt>) -> (i32, i32) {
     bounds
 }
 
-fn find_air_pockets(cubes: &HashSet<Pt>) -> HashSet<Pt> {
+fn find_air_pockets(cubes: &HashSet<P3<i32>>) -> HashSet<P3<i32>> {
     let (lb, ub) = find_bounds(cubes);
     let (lb, ub) = (lb - 2, ub + 2);
 
-    let grid: HashSet<Pt> = (lb..ub)
+    let grid: HashSet<P3<i32>> = (lb..ub)
         .cartesian_product(lb..ub)
         .cartesian_product(lb..ub)
-        .map(|((z, y), x)| Pt { z, y, x })
+        .map(|((z, y), x)| P3 { x, y, z })
         .filter(|p| !cubes.contains(p))
         .collect();
 
-    let mut queue = queue![Pt::new(lb, lb, lb)];
+    let mut queue = queue![P3::new(lb, lb, lb)];
     let mut visited = set![];
 
     while let Some(cur) = queue.pop_front() {
@@ -86,16 +82,27 @@ fn find_air_pockets(cubes: &HashSet<Pt>) -> HashSet<Pt> {
     grid.into_iter().filter(|p| !visited.contains(p)).collect()
 }
 
+fn point_from_str(s: &str) -> P3<i32> {
+    let re = re!(r"(-?\d+).(-?\d+).(-?\d+)");
+    let Some(caps) = re.captures(s) else { panic!(r"Pattern (-?\d+).(-?\d+).(-?\d+) not recognised in input") };
+    let Some(nums) = caps.iter().skip(1).map(|cap| cap.map(|cap| cap.as_str())).collect_tuple() else {
+        panic!("Number of elements in string is incorrect")
+    };
+    let (Some(x), Some(y), Some(z)) = nums else { panic!("Number of elements in string is incorrect") };
+    let (Ok(x), Ok(y), Ok(z)) = (x.parse(), y.parse(), z.parse()) else { panic!("Could not parse one or more elements") };
+    P3 { x, y, z }
+}
+
 impl Puzzle for Day18 {
     fn part_one(&self, data: &'static str) -> String {
-        let cubes = data.lines().map(|s| Pt::from_str(s).unwrap()).collect();
+        let cubes = data.lines().map(point_from_str).collect();
 
         let surface_area = find_surface_area(&cubes);
         surface_area.to_string()
     }
 
     fn part_two(&self, data: &'static str) -> String {
-        let mut cubes = data.lines().map(|s| Pt::from_str(s).unwrap()).collect();
+        let mut cubes = data.lines().map(point_from_str).collect();
         let air_pockets = find_air_pockets(&cubes);
 
         cubes.extend(air_pockets.iter());

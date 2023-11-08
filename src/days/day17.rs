@@ -1,8 +1,7 @@
-use crate::{days::*, Point2d};
+use crate::days::*;
 use itertools::Itertools;
+use pt::P2;
 use std::collections::HashSet;
-
-type Pt = Point2d<i64>;
 
 struct Input {
     len: usize,
@@ -30,16 +29,16 @@ impl Input {
 
 #[derive(Clone)]
 struct Shape {
-    shape: Vec<Pt>,
-    position: Pt,
-    bounds: Pt,
+    shape: Vec<P2<i64>>,
+    position: P2<i64>,
+    bounds: P2<i64>,
 }
 impl Shape {
-    fn positions(&self) -> impl Iterator<Item = Pt> + '_ {
+    fn positions(&self) -> impl Iterator<Item = P2<i64>> + '_ {
         self.shape.iter().map(|&p| p + self.position)
     }
 
-    fn is_colliding(&self, points: &HashSet<Pt>) -> bool {
+    fn is_colliding(&self, points: &HashSet<P2<i64>>) -> bool {
         self.positions().any(|s| points.contains(&s))
     }
 }
@@ -53,55 +52,55 @@ impl Default for Shapes {
             shapes: [
                 Shape {
                     shape: vec![
-                        Pt { x: 0, y: 0 },
-                        Pt { x: 1, y: 0 },
-                        Pt { x: 2, y: 0 },
-                        Pt { x: 3, y: 0 },
+                        P2 { x: 0, y: 0 },
+                        P2 { x: 1, y: 0 },
+                        P2 { x: 2, y: 0 },
+                        P2 { x: 3, y: 0 },
                     ],
-                    position: Pt { x: 3, y: 0 },
-                    bounds: Pt { x: 3, y: 0 },
+                    position: P2 { x: 3, y: 0 },
+                    bounds: P2 { x: 3, y: 0 },
                 },
                 Shape {
                     shape: vec![
-                        Pt { x: 1, y: 0 },
-                        Pt { x: 0, y: 1 },
-                        Pt { x: 1, y: 1 },
-                        Pt { x: 2, y: 1 },
-                        Pt { x: 1, y: 2 },
+                        P2 { x: 1, y: 0 },
+                        P2 { x: 0, y: 1 },
+                        P2 { x: 1, y: 1 },
+                        P2 { x: 2, y: 1 },
+                        P2 { x: 1, y: 2 },
                     ],
-                    position: Pt { x: 3, y: 0 },
-                    bounds: Pt { x: 2, y: 2 },
+                    position: P2 { x: 3, y: 0 },
+                    bounds: P2 { x: 2, y: 2 },
                 },
                 Shape {
                     shape: vec![
-                        Pt { x: 0, y: 0 },
-                        Pt { x: 1, y: 0 },
-                        Pt { x: 2, y: 0 },
-                        Pt { x: 2, y: 1 },
-                        Pt { x: 2, y: 2 },
+                        P2 { x: 0, y: 0 },
+                        P2 { x: 1, y: 0 },
+                        P2 { x: 2, y: 0 },
+                        P2 { x: 2, y: 1 },
+                        P2 { x: 2, y: 2 },
                     ],
-                    position: Pt { x: 3, y: 0 },
-                    bounds: Pt { x: 2, y: 2 },
+                    position: P2 { x: 3, y: 0 },
+                    bounds: P2 { x: 2, y: 2 },
                 },
                 Shape {
                     shape: vec![
-                        Pt { x: 0, y: 0 },
-                        Pt { x: 0, y: 1 },
-                        Pt { x: 0, y: 2 },
-                        Pt { x: 0, y: 3 },
+                        P2 { x: 0, y: 0 },
+                        P2 { x: 0, y: 1 },
+                        P2 { x: 0, y: 2 },
+                        P2 { x: 0, y: 3 },
                     ],
-                    position: Pt { x: 3, y: 0 },
-                    bounds: Pt { x: 0, y: 3 },
+                    position: P2 { x: 3, y: 0 },
+                    bounds: P2 { x: 0, y: 3 },
                 },
                 Shape {
                     shape: vec![
-                        Pt { x: 0, y: 0 },
-                        Pt { x: 1, y: 0 },
-                        Pt { x: 0, y: 1 },
-                        Pt { x: 1, y: 1 },
+                        P2 { x: 0, y: 0 },
+                        P2 { x: 1, y: 0 },
+                        P2 { x: 0, y: 1 },
+                        P2 { x: 1, y: 1 },
                     ],
-                    position: Pt { x: 3, y: 0 },
-                    bounds: Pt { x: 1, y: 1 },
+                    position: P2 { x: 3, y: 0 },
+                    bounds: P2 { x: 1, y: 1 },
                 },
             ],
             current: 0,

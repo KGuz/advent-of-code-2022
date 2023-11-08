@@ -1,12 +1,12 @@
-use crate::{days::*, Point2d};
+use crate::days::*;
 use itertools::Itertools;
+use pt::P2;
 use std::ops::Range;
-type Pt = Point2d<i64>;
 
 #[derive(Debug)]
 struct Sensor {
-    signal: Pt,
-    beacon: Pt,
+    signal: P2<i64>,
+    beacon: P2<i64>,
     radius: i64,
 }
 impl Sensor {
@@ -15,34 +15,38 @@ impl Sensor {
         let (sx, sy, bx, by) = captures!(data, re);
 
         Sensor::new(
-            Pt::new(parse!(sy), parse!(sx)),
-            Pt::new(parse!(by), parse!(bx)),
+            P2::new(parse!(sx), parse!(sy)),
+            P2::new(parse!(bx), parse!(by)),
         )
     }
-    fn new(signal: Pt, beacon: Pt) -> Self {
-        let mut sensor = Self { signal, beacon, radius: 0 };
+    fn new(signal: P2<i64>, beacon: P2<i64>) -> Self {
+        let mut sensor = Self {
+            signal,
+            beacon,
+            radius: 0,
+        };
         sensor.radius = sensor.dist(sensor.beacon);
         sensor
     }
-    fn dist(&self, pt: Pt) -> i64 {
+    fn dist(&self, pt: P2<i64>) -> i64 {
         let diff = self.signal - pt;
         diff.y.abs() + diff.x.abs()
     }
-    fn contains(&self, pt: Pt) -> bool {
+    fn contains(&self, pt: P2<i64>) -> bool {
         self.dist(pt) <= self.radius
     }
-    fn skip_sensor_range(&self, pt: Pt) -> i64 {
+    fn skip_sensor_range(&self, pt: P2<i64>) -> i64 {
         let dx = self.radius - (self.signal.y - pt.y).abs();
         dx + (self.signal.x - pt.x)
     }
 }
 
-fn filter_vacant(sensors: &[Sensor], range: Range<i64>, y: i64) -> Vec<Pt> {
+fn filter_vacant(sensors: &[Sensor], range: Range<i64>, y: i64) -> Vec<P2<i64>> {
     let mut vacancies = vec![];
 
     let mut x = range.start;
     while x < range.end {
-        let p = Pt { y, x };
+        let p = P2 { x, y };
         match sensors.iter().find(|s| s.contains(p)) {
             Some(s) => x += s.skip_sensor_range(p),
             None => vacancies.push(p),
@@ -52,10 +56,10 @@ fn filter_vacant(sensors: &[Sensor], range: Range<i64>, y: i64) -> Vec<Pt> {
     vacancies
 }
 
-fn find_vacant(sensors: &[Sensor], range: Range<i64>, y: i64) -> Option<Pt> {
+fn find_vacant(sensors: &[Sensor], range: Range<i64>, y: i64) -> Option<P2<i64>> {
     let mut x = range.start;
     while x < range.end {
-        let p = Pt { y, x };
+        let p = P2 { x, y };
         match sensors.iter().find(|s| s.contains(p)) {
             Some(s) => x += s.skip_sensor_range(p),
             None => return Some(p),

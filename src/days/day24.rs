@@ -1,11 +1,6 @@
-use crate::{
-    days::*,
-    point::{pt, Point2d, Point3d},
-};
+use crate::days::*;
+use pt::{pt, P2, P3};
 use std::collections::HashMap;
-
-type Pt3 = Point3d<usize>;
-type Pt2 = Point2d<usize>;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Dir {
@@ -58,10 +53,10 @@ enum Cell {
 }
 
 struct Valley {
-    view: HashMap<Pt3, Cell>,
-    dims: Pt3,
-    src: Pt2,
-    dst: Pt2,
+    view: HashMap<P3<usize>, Cell>,
+    dims: P3<usize>,
+    src: P2<usize>,
+    dst: P2<usize>,
 }
 impl Valley {
     fn from(data: &str) -> Self {
@@ -70,7 +65,7 @@ impl Valley {
         let mut view = map![];
         let mut slice = vec![];
         for (y, line) in data.lines().enumerate() {
-            let mut row = vec![];
+            let mut row: Vec<Cell> = vec![];
             for (x, chr) in line.char_indices() {
                 let cell = match chr {
                     '#' => Wall,
@@ -81,7 +76,7 @@ impl Valley {
                     'v' => Blizzard(_1([D])),
                     _ => continue,
                 };
-                view.insert(pt!(0, y, x), cell);
+                view.insert(pt!(x, y, 0), cell);
                 row.push(cell);
             }
             slice.push(row);
@@ -93,16 +88,16 @@ impl Valley {
 
         Self {
             view: Self::expand_in_time_domain(view, slice),
-            dims: pt!((h - 2) * (w - 2), h, w),
-            src: pt!(0, src_x),
-            dst: pt!(h - 1, dst_x),
+            dims: pt!(w, h, (h - 2) * (w - 2)),
+            src: pt!(src_x, 0),
+            dst: pt!(dst_x, h - 1),
         }
     }
 
     fn expand_in_time_domain(
-        mut valley: HashMap<Pt3, Cell>,
+        mut valley: HashMap<P3<usize>, Cell>,
         mut slice: Vec<Vec<Cell>>,
-    ) -> HashMap<Pt3, Cell> {
+    ) -> HashMap<P3<usize>, Cell> {
         use {Cell::*, Dir::*, Dirs::*};
 
         let (h, w) = (slice.len(), slice[0].len());
@@ -174,7 +169,7 @@ impl Valley {
 
             for (y, row) in next_slice.iter().enumerate() {
                 for (x, c) in row.iter().enumerate() {
-                    valley.insert(pt!(t, y, x), *c);
+                    valley.insert(pt!(x, y, t), *c);
                 }
             }
 
@@ -192,7 +187,7 @@ impl Valley {
 
         for y in 0..self.dims.y {
             for x in 0..self.dims.x {
-                let ch = match self.view[&pt!(z, y, x)] {
+                let ch = match self.view[&pt!(x, y, z)] {
                     Wall => '#',
                     Ground => '.',
                     Blizzard(dirs) => match dirs {
@@ -213,41 +208,41 @@ impl Valley {
         }
     }
 
-    fn find_path(&self, src: Pt3, dst: Pt2) -> usize {
+    fn find_path(&self, src: P3<usize>, dst: P2<usize>) -> usize {
         let mut queue = queue![src];
         let mut visited = set![];
 
         let mut time = 0;
-        while let Some(Pt3 { z, y, x }) = queue.pop_front() {
-            if pt!(y, x) == dst {
+        while let Some(P3 { x, y, z }) = queue.pop_front() {
+            if pt!(x, y) == dst {
                 time = z;
                 break;
             }
 
-            let pos_id = pt!(z % self.dims.z, y, x);
+            let pos_id = pt!(x, y, z % self.dims.z);
             if visited.contains(&pos_id) {
                 continue;
             }
             visited.insert(pos_id);
 
-            for p in self.paths(pt!(z, y, x)) {
+            for p in self.paths(pt!(x, y, z)) {
                 queue.push_back(p);
             }
         }
         time
     }
 
-    fn paths(&self, Pt3 { z, y, x }: Pt3) -> Vec<Pt3> {
+    fn paths(&self, P3 { x, y, z }: P3<usize>) -> Vec<P3<usize>> {
         let steps = [
-            pt!(z + 1, y, x),
-            pt!(z + 1, y, x - 1),
-            pt!(z + 1, y, x + 1),
-            pt!(z + 1, y - 1, x),
-            pt!(z + 1, y + 1, x),
+            pt!(x, y, z + 1),
+            pt!(x - 1, y, z + 1),
+            pt!(x + 1, y, z + 1),
+            pt!(x, y - 1, z + 1),
+            pt!(x, y + 1, z + 1),
         ];
 
-        steps.iter().filter(|&&Pt3{z, y, x}| {
-            matches!(self.view.get(&pt!(z % self.dims.z, y, x)), Some(cell) if *cell == Cell::Ground)
+        steps.iter().filter(|&&P3{x, y, z}| {
+            matches!(self.view.get(&pt!(x, y, z % self.dims.z)), Some(cell) if *cell == Cell::Ground)
         }).copied().collect()
     }
 }
@@ -255,15 +250,15 @@ impl Valley {
 impl Puzzle for Day24 {
     fn part_one(&self, data: &'static str) -> String {
         let valley = Valley::from(data);
-        let time = valley.find_path(pt!(0, valley.src.y, valley.src.x), valley.dst);
+        let time = valley.find_path(pt!(valley.src.x, valley.src.y, 0), valley.dst);
         time.to_string()
     }
 
     fn part_two(&self, data: &'static str) -> String {
         let valley = Valley::from(data);
-        let mut time = valley.find_path(pt!(0, valley.src.y, valley.src.x), valley.dst);
-        time = valley.find_path(pt!(time, valley.dst.y, valley.dst.x), valley.src);
-        time = valley.find_path(pt!(time, valley.src.y, valley.src.x), valley.dst);
+        let mut time = valley.find_path(pt!(valley.src.x, valley.src.y, 0), valley.dst);
+        time = valley.find_path(pt!(valley.dst.x, valley.dst.y, time), valley.src);
+        time = valley.find_path(pt!(valley.src.x, valley.src.y, time), valley.dst);
         time.to_string()
     }
 }

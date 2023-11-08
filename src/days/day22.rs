@@ -1,4 +1,4 @@
-use crate::{days::*, Point2d};
+use crate::days::*;
 use itertools::Itertools;
 use nom::{
     branch::alt,
@@ -6,10 +6,10 @@ use nom::{
     multi::many1,
     IResult, Parser,
 };
+use pt::P2;
 use std::collections::HashMap;
 
-type Pt = Point2d<i32>;
-type WrappingFn = fn(&HashMap<Pt, Tile>, Pt, Pt, Pt) -> (Pt, Pt);
+type WrappingFn = fn(&HashMap<P2<i32>, Tile>, P2<i32>, P2<i32>, P2<i32>) -> (P2<i32>, P2<i32>);
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum Tile {
@@ -29,14 +29,14 @@ impl From<char> for Tile {
 
 struct BoardMap;
 impl BoardMap {
-    fn from(data: &[&str]) -> HashMap<Pt, Tile> {
+    fn from(data: &[&str]) -> HashMap<P2<i32>, Tile> {
         let mut board = HashMap::new();
         for (y, line) in data.iter().enumerate() {
             for (x, c) in line.chars().enumerate() {
                 let (x, y) = (x as i32 + 1, y as i32 + 1);
                 match c {
-                    '.' => board.insert(Pt { x, y }, Tile::Space),
-                    '#' => board.insert(Pt { x, y }, Tile::Wall),
+                    '.' => board.insert(P2 { x, y }, Tile::Space),
+                    '#' => board.insert(P2 { x, y }, Tile::Wall),
                     _ => continue,
                 };
             }
@@ -65,7 +65,7 @@ impl Steps {
     }
 }
 
-fn start_params(board: &HashMap<Pt, Tile>) -> (Pt, Pt) {
+fn start_params(board: &HashMap<P2<i32>, Tile>) -> (P2<i32>, P2<i32>) {
     let x_start = board
         .iter()
         .filter(|(pt, _)| pt.y == 1)
@@ -73,27 +73,32 @@ fn start_params(board: &HashMap<Pt, Tile>) -> (Pt, Pt) {
         .min()
         .unwrap();
 
-    (Pt::new(1, x_start), Pt::new(0, 1))
+    (P2::new(x_start, 1), P2::new(1, 0))
 }
 
-fn password(pos: Pt, dir: Pt) -> i32 {
-    let (row, column) = pos.into();
+fn password(pos: P2<i32>, dir: P2<i32>) -> i32 {
+    let (column, row) = pos.into();
     let facing = match dir.into() {
-        (0, 1) => 0,
-        (1, 0) => 1,
-        (0, -1) => 2,
-        (-1, 0) => 3,
+        (1, 0) => 0,
+        (0, 1) => 1,
+        (-1, 0) => 2,
+        (0, -1) => 3,
         _ => unreachable!(),
     };
     1000 * row + 4 * column + facing
 }
 
-fn simple_wrap(board: &HashMap<Pt, Tile>, pos: Pt, dir: Pt, bounds: Pt) -> (Pt, Pt) {
+fn simple_wrap(
+    board: &HashMap<P2<i32>, Tile>,
+    pos: P2<i32>,
+    dir: P2<i32>,
+    bounds: P2<i32>,
+) -> (P2<i32>, P2<i32>) {
     let mut wrapped_pos = match dir.into() {
-        (_, x) if x == -1 => Pt::new(pos.y, bounds.x),
-        (_, x) if x == 1 => Pt::new(pos.y, 1),
-        (y, _) if y == 1 => Pt::new(1, pos.x),
-        (y, _) if y == -1 => Pt::new(bounds.y, pos.x),
+        (x, _) if x == -1 => P2::new(bounds.x, pos.y),
+        (x, _) if x == 1 => P2::new(1, pos.y),
+        (_, y) if y == 1 => P2::new(pos.x, 1),
+        (_, y) if y == -1 => P2::new(pos.x, bounds.y),
         _ => unreachable!(),
     };
 
@@ -106,7 +111,7 @@ fn simple_wrap(board: &HashMap<Pt, Tile>, pos: Pt, dir: Pt, bounds: Pt) -> (Pt, 
     (wrapped_pos, dir)
 }
 
-fn segment(pos: Pt) -> i32 {
+fn segment(pos: P2<i32>) -> i32 {
     match pos.y {
         ..=50 => match pos.x {
             ..=100 => 1,
@@ -121,38 +126,44 @@ fn segment(pos: Pt) -> i32 {
     }
 }
 
-fn magic_wrap(board: &HashMap<Pt, Tile>, pos: Pt, dir: Pt, _: Pt) -> (Pt, Pt) {
+#[rustfmt::skip]
+fn magic_wrap(
+    board: &HashMap<P2<i32>, Tile>,
+    pos: P2<i32>,
+    dir: P2<i32>,
+    _: P2<i32>,
+) -> (P2<i32>, P2<i32>) {
     let (wrapped_pos, wrapped_dir) = match segment(pos) {
         1 => match dir.into() {
-            (_, x) if x == -1 => ((151 - pos.y, 1), (0, 1)), // 4
-            (y, _) if y == -1 => ((100 + pos.x, 1), (0, 1)), // 6
+            (x, _) if x == -1 => ((1, 151 - pos.y), (1, 0)), // 4
+            (_, y) if y == -1 => ((1, 100 + pos.x), (1, 0)), // 6
             _ => unreachable!(),
         },
         2 => match dir.into() {
-            (y, _) if y == -1 => ((200, pos.x - 100), (-1, 0)), // 6
-            (y, _) if y == 1 => ((pos.x - 50, 100), (0, -1)),   // 3
-            (_, x) if x == 1 => ((151 - pos.y, 100), (0, -1)),  // 5
+            (_, y) if y == -1 => ((pos.x - 100, 200), (0, -1)), // 6
+            (_, y) if y ==  1 => ((100, pos.x - 50 ), (-1, 0)), // 3
+            (x, _) if x ==  1 => ((100, 151 - pos.y), (-1, 0)), // 5
             _ => unreachable!(),
         },
         3 => match dir.into() {
-            (_, x) if x == -1 => ((101, pos.y - 50), (1, 0)), // 4
-            (_, x) if x == 1 => ((50, pos.y + 50), (-1, 0)),  // 2
+            (x, _) if x == -1 => ((pos.y - 50, 101), (0, 1)),   // 4
+            (x, _) if x ==  1 => ((pos.y + 50, 50 ),  (0, -1)), // 2
             _ => unreachable!(),
         },
         4 => match dir.into() {
-            (_, x) if x == -1 => ((pos.y - 100, 51), (0, 1)), // 1
-            (y, _) if y == -1 => ((pos.x + 50, 51), (0, 1)),  // 3
+            (x, _) if x == -1 => ((51, pos.y - 100), (1, 0)), // 1
+            (_, y) if y == -1 => ((51, pos.x + 50 ), (1, 0)), // 3
             _ => unreachable!(),
         },
         5 => match dir.into() {
-            (_, x) if x == 1 => ((151 - pos.y, 150), (0, -1)), // 2
-            (y, _) if y == 1 => ((pos.x + 100, 50), (0, -1)),  // 6
+            (x, _) if x == 1 => ((150, 151 - pos.y), (-1, 0)), // 2
+            (_, y) if y == 1 => ((50,  pos.x + 100), (-1, 0)), // 6
             _ => unreachable!(),
         },
         6 => match dir.into() {
-            (_, x) if x == -1 => ((1, pos.y - 100), (1, 0)), // 1
-            (_, x) if x == 1 => ((150, pos.y - 100), (-1, 0)), // 5
-            (y, _) if y == 1 => ((1, pos.x + 100), (1, 0)),  // 2
+            (x, _) if x == -1 => ((pos.y - 100, 1  ), (0,  1)), // 1
+            (x, _) if x ==  1 => ((pos.y - 100, 150), (0, -1)), // 5
+            (_, y) if y ==  1 => ((pos.x + 100, 1  ), (0,  1)), // 2
             _ => unreachable!(),
         },
         _ => unreachable!(),
@@ -167,16 +178,16 @@ fn magic_wrap(board: &HashMap<Pt, Tile>, pos: Pt, dir: Pt, _: Pt) -> (Pt, Pt) {
 
 fn follow_steps(
     steps: Vec<Step>,
-    board: HashMap<Pt, Tile>,
-    mut pos: Pt,
-    mut dir: Pt,
+    board: HashMap<P2<i32>, Tile>,
+    mut pos: P2<i32>,
+    mut dir: P2<i32>,
     wrapping_fn: WrappingFn,
-) -> (Pt, Pt) {
+) -> (P2<i32>, P2<i32>) {
     use {Step::*, Tile::*};
 
-    let bounds = Pt {
-        y: board.keys().map(|pt| pt.y).max().unwrap(),
+    let bounds = P2 {
         x: board.keys().map(|pt| pt.x).max().unwrap(),
+        y: board.keys().map(|pt| pt.y).max().unwrap(),
     };
 
     for step in steps {
@@ -194,22 +205,24 @@ fn follow_steps(
                     val -= 1;
                 }
             }
+            #[rustfmt::skip]
             TurnLeft => {
                 dir = match dir.into() {
                     // should be dependent on previous dir state as well
-                    (0, -1) => Pt::new(1, 0),
-                    (0, 1) => Pt::new(-1, 0),
-                    (-1, 0) => Pt::new(0, -1),
-                    (1, 0) => Pt::new(0, 1),
+                    (-1,  0) => P2::new( 0,  1),
+                    ( 1,  0) => P2::new( 0, -1),
+                    ( 0, -1) => P2::new(-1,  0),
+                    ( 0,  1) => P2::new( 1,  0),
                     _ => unreachable!(),
                 };
             }
+            #[rustfmt::skip]
             TurnRight => {
                 dir = match dir.into() {
-                    (0, -1) => Pt::new(-1, 0),
-                    (0, 1) => Pt::new(1, 0),
-                    (-1, 0) => Pt::new(0, 1),
-                    (1, 0) => Pt::new(0, -1),
+                    (-1,  0) => P2::new( 0, -1),
+                    ( 1,  0) => P2::new( 0,  1),
+                    ( 0, -1) => P2::new( 1,  0),
+                    ( 0,  1) => P2::new(-1,  0),
                     _ => unreachable!(),
                 };
             }

@@ -11,7 +11,10 @@ struct Args {
 
 fn main() {
     let day = Args::parse().day;
-    assert!((1..=25).contains(&day), "Advent day number out of range (1..=25)");
+    assert!(
+        (1..=25).contains(&day),
+        "Advent day number out of range (1..=25)"
+    );
 
     let (part_one, part_two) = AdventOfCode[day].solve(&Dataset[day]);
     println!("{:*^60}", format!(" Advent of Code 2022 - Day {} ", day));

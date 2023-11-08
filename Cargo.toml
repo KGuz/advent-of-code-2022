@@ -13,3 +13,4 @@ petgraph = "0.6.2"
 derive_more = "0.99.17"
 lazy_static = "1.4.0"
 anyhow = "1.0.68"
+pt = { git = "https://github.com/KGuz/pt.git" }

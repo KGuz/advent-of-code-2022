@@ -1,27 +1,27 @@
-use crate::{
-    days::*,
-    point::{pt, Point2d},
-};
+use crate::days::*;
 use itertools::all;
+use pt::{pt, P2};
 use std::{collections::HashSet, hash::Hash};
 
-type Pt = Point2d<i32>;
-
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
-struct Elf(Pt);
+struct Elf(P2<i32>);
 impl Elf {
-    fn neighbours(&self, dir: char) -> [Pt; 3] {
+    fn neighbours(&self, dir: char) -> [P2<i32>; 3] {
         match dir {
-            'N' => [pt!(-1, -1), pt!(-1, 0), pt!(-1, 1)],
-            'S' => [pt!(1, -1), pt!(1, 0), pt!(1, 1)],
-            'W' => [pt!(-1, -1), pt!(0, -1), pt!(1, -1)],
-            'E' => [pt!(-1, 1), pt!(0, 1), pt!(1, 1)],
+            'N' => [pt!(-1, -1), pt!(0, -1), pt!(1, -1)],
+            'S' => [pt!(-1, 1), pt!(0, 1), pt!(1, 1)],
+            'W' => [pt!(-1, -1), pt!(-1, 0), pt!(-1, 1)],
+            'E' => [pt!(1, -1), pt!(1, 0), pt!(1, 1)],
             _ => unreachable!(),
         }
         .map(|p| self.0 + p)
     }
 
-    fn propose_move(&self, elves: &HashSet<Elf>, cycle: impl Iterator<Item = char>) -> Option<Pt> {
+    fn propose_move(
+        &self,
+        elves: &HashSet<Elf>,
+        cycle: impl Iterator<Item = char>,
+    ) -> Option<P2<i32>> {
         let mut moves = vec![];
         for neighbours in cycle.map(|dir| self.neighbours(dir)) {
             if all(neighbours, |p| !elves.contains(&Elf(p))) {
@@ -41,13 +41,13 @@ impl Elves {
         let mut elves = set![];
         for (y, line) in data.lines().enumerate() {
             for (x, _) in line.char_indices().filter(|&(_, c)| c == '#') {
-                let pos = pt!(y as i32, x as i32);
+                let pos = pt!(x as i32, y as i32);
                 elves.insert(Elf(pos));
             }
         }
         elves
     }
-    fn bounding_box(elves: &HashSet<Elf>) -> (Pt, Pt) {
+    fn bounding_box(elves: &HashSet<Elf>) -> (P2<i32>, P2<i32>) {
         let mut min = pt!(i32::MAX, i32::MAX);
         let mut max = pt!(i32::MIN, i32::MIN);
 
@@ -61,7 +61,7 @@ impl Elves {
     }
 }
 
-fn remove_collisions(moves: Vec<(Elf, Pt)>) -> Vec<(Elf, Pt)> {
+fn remove_collisions(moves: Vec<(Elf, P2<i32>)>) -> Vec<(Elf, P2<i32>)> {
     let mut visited = map![];
     for &(_, new_pos) in &moves {
         *visited.entry(new_pos).or_insert(0) += 1;

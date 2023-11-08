@@ -28,6 +28,7 @@ dependencies = [
  "lazy_static",
  "nom",
  "petgraph",
+ "pt",
  "rayon",
  "regex",
 ]
@@ -309,6 +310,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-traits"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39e3200413f237f41ab11ad6d161bc7239c84dcb631773ccd7de3dfe4b5c267c"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "num_cpus"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -371,6 +381,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "pt"
+version = "0.1.0"
+source = "git+https://github.com/KGuz/pt.git#2bd77b336e43123c7446c3218667cc9d8ec0f70a"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
