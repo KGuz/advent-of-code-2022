@@ -1,4 +1,4 @@
-use aoc::{AdventOfCode, Dataset};
+use aoc::{dispatch, load_input};
 use clap::Parser;
 
 /// Solver of 2022 Advent of Code Puzzles
@@ -16,8 +16,8 @@ fn main() {
         "Advent day number out of range (1..=25)"
     );
 
-    let (part_one, part_two) = AdventOfCode[day].solve(&Dataset[day]);
+    let (puzzle, input) = (dispatch(day), load_input(day));
     println!("{:*^60}", format!(" Advent of Code 2022 - Day {} ", day));
-    println!("Part one {:.>51}", format!(" {}", part_one));
-    println!("Part two {:.>51}", format!(" {}", part_two));
+    println!("Part one {:.>51}", format!(" {}", puzzle.part_one(input)));
+    println!("Part two {:.>51}", format!(" {}", puzzle.part_two(input)));
 }

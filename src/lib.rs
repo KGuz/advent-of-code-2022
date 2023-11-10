@@ -1,6 +1,7 @@
-mod advent_of_code;
-mod dataset;
-mod days;
+mod advent;
+mod assets;
+mod macros;
+mod puzzle;
 
-pub use advent_of_code::AdventOfCode;
-pub use dataset::Dataset;
+pub use assets::load_input;
+pub use puzzle::dispatch;
